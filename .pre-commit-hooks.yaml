@@ -1,0 +1,6 @@
+- id: check-open-source-software
+  name: check open source software
+  description: checks for potential open source software in the files being commited
+  entry: check_open_source_software
+  language: python
+  stages: [pre-commit, pre-push, manual]
