@@ -23,7 +23,14 @@
 ###
 import logging
 import subprocess
-from pathlib import Path
+
+from utils import (
+    get_identify,
+    get_staged_files,
+    log_and_exit,
+    maybe_remove_old_results,
+    maybe_setup_results_dir,
+)
 
 DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"
 DEFAULT_SBOM_FILE = "SBOM.json"
@@ -45,15 +52,17 @@ def main():
         DEFAULT_RESULTS_PATH,
     ]
 
-    identify = get_identify(scanoss_scan_cmd)
+    identify = get_identify(
+        scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE
+    )
     if identify is None:
         log_and_exit(
             f"No SCANOSS settings file or sbom file found, please make sure you have either a {DEFAULT_SCANOSS_SETTINGS_FILE} or {DEFAULT_SBOM_FILE} file in the root of your project.",
             1,
         )
 
-    maybe_setup_results_dir()
-    maybe_remove_old_results()
+    maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
+    maybe_remove_old_results(DEFAULT_RESULTS_PATH)
 
     staged_files = get_staged_files()
     if not staged_files:
@@ -66,55 +75,6 @@ def main():
     present_results()
 
     exit(0)
-
-
-def get_identify(scan_cmd: list[str]) -> str | None:
-    """Get the identify file path for Scanning.
-
-    Returns:
-        str | None: file path to the identify file
-    """
-    identify: str | None = None
-
-    settings_file_path = Path(DEFAULT_SCANOSS_SETTINGS_FILE).resolve()
-    legacy_sbom_file_path = Path(DEFAULT_SBOM_FILE).resolve()
-
-    # Prefer settings file over legacy sbom file
-    if settings_file_path.is_file():
-        identify = str(settings_file_path)
-        scan_cmd.extend(["--settings", identify])
-    elif legacy_sbom_file_path.is_file():
-        identify = str(legacy_sbom_file_path)
-        scan_cmd.extend(["--identify", identify, "-F", "512"])
-
-    return identify
-
-
-def maybe_setup_results_dir():
-    """Create the results directory if it does not exist."""
-    results_dir = Path(DEFAULT_RESULTS_DIR)
-    results_dir.mkdir(exist_ok=True)
-
-
-def maybe_remove_old_results():
-    """Remove the old results file if it exists."""
-    results_file = Path(DEFAULT_RESULTS_PATH)
-    if results_file.is_file():
-        results_file.unlink(missing_ok=True)
-
-
-def log_and_exit(message: str, exit_code: int) -> None:
-    """Log a message and exit with the given code.
-
-    Args:
-        message (str): message to log
-        exit_code (int): exit code
-    """
-    if exit_code == 0:
-        logging.info(message)
-    else:
-        logging.error(message)
-    exit(exit_code)
 
 
 def run_scan(scan_cmd: list[str]) -> None:
@@ -143,43 +103,22 @@ def present_results() -> None:
             ],
             capture_output=True,
             text=True,
-            check=True,
         )
 
         scan_results = cmd_result.stdout
-        logging.info(scan_results)
-    except subprocess.CalledProcessError as e:
-        # If there are pending results, exit code is 1
-        if e.returncode == 1:
+
+        # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.
+        if cmd_result.returncode == 1:
+            logging.info(
+                "SCANOSS detected potential Open Source software. Please review the following:"
+            )
+            logging.info(scan_results, 1)
             log_and_exit(
-                "SCANOSS detected potential Open Source software. Please review the following:\n"
                 "Run 'scanoss-lui' in the terminal to view the results in more detail.",
                 1,
             )
-
-
-def get_staged_files() -> list[str]:
-    """Get the list of staged files in the current git repository.
-
-    Returns:
-        list[str]: list of staged files or an empty list if no files are staged.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        staged_files = result.stdout.strip().split("\n")
-        return [f for f in staged_files if f]
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error: Git command failed: {e}")
-        return []
     except Exception as e:
-        logging.error(f"Error: {e}")
-        return []
+        log_and_exit(f"Error: SCANOSS results command failed: {e}", 1)
 
 
 if __name__ == "__main__":
