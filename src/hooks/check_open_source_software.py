@@ -21,9 +21,12 @@
 #   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #   THE SOFTWARE.
 ###
+import json
 import logging
 import subprocess
 
+from rich.console import Console
+from rich.json import JSON
 from utils import (
     get_identify,
     get_staged_files,
@@ -37,6 +40,8 @@ DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
 DEFAULT_RESULTS_FILENAME = "results.json"
 DEFAULT_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/{DEFAULT_RESULTS_FILENAME}"
+
+console = Console()
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -109,10 +114,12 @@ def present_results() -> None:
 
         # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.
         if cmd_result.returncode == 1:
-            logging.info(
-                "SCANOSS detected potential Open Source software. Please review the following:"
+            scan_results_json = json.loads(scan_results)
+            console.print(
+                f"SCANOSS detected {scan_results_json.get("total")} files containing potential Open Source Software:",
+                style="bold red",
             )
-            logging.info(scan_results, 1)
+            console.print(JSON(scan_results_json))
             log_and_exit(
                 "Run 'scanoss-lui' in the terminal to view the results in more detail.",
                 1,

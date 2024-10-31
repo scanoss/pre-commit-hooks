@@ -1,1 +1,2 @@
-scanoss==1.17.2
+scanoss==1.17.1
+rich==13.9.3
