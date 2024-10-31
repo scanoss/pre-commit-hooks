@@ -21,9 +21,8 @@
 #   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #   THE SOFTWARE.
 ###
-
+import logging
 import subprocess
-import sys
 from pathlib import Path
 
 DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"
@@ -31,6 +30,10 @@ DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
 DEFAULT_RESULTS_FILENAME = "results.json"
 DEFAULT_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/{DEFAULT_RESULTS_FILENAME}"
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def main():
@@ -44,64 +47,24 @@ def main():
 
     identify = get_identify(scanoss_scan_cmd)
     if identify is None:
-        print_stderr(
+        log_and_exit(
             f"No SCANOSS settings file or sbom file found, please make sure you have either a {DEFAULT_SCANOSS_SETTINGS_FILE} or {DEFAULT_SBOM_FILE} file in the root of your project.",
+            1,
         )
-        exit(1)
 
     maybe_setup_results_dir()
     maybe_remove_old_results()
 
     staged_files = get_staged_files()
     if not staged_files:
-        print_stderr(
-            "No files to scan. Skipping SCANOSS.",
-        )
-        exit(0)
+        log_and_exit("No files to scan. Skipping SCANOSS.", 0)
 
-    scanoss_scan_cmd.extend(
-        [
-            "--files",
-            *staged_files,
-        ]
-    )
+    scanoss_scan_cmd.extend(["--files", *staged_files])
 
-    # Run the scan
-    try:
-        subprocess.run(scanoss_scan_cmd, check=True)
-    except subprocess.CalledProcessError as e:
-        print_stderr(
-            f"Error: SCANOSS scan failed: {e}",
-        )
-        exit(1)
+    run_scan(scanoss_scan_cmd)
 
-    # Present the results
-    scan_results = None
-    try:
-        cmd_result = subprocess.run(
-            [
-                "scanoss-py",
-                "results",
-                DEFAULT_RESULTS_PATH,
-                "--has-pending",
-                "--format",
-                "json",
-            ],
-            check=True,
-        )
+    present_results()
 
-        scan_results = cmd_result.stdout
-    except subprocess.CalledProcessError as e:
-        # If there are pending results, exit code is 1
-        if e.returncode == 1:
-            print_stderr(
-                "SCANOSS detected potential Open Source software. Please review the following:",
-            )
-            print_stderr(
-                "Run 'scanoss-lui' in the terminal to view the results in more detail.",
-            )
-            print_stderr(scan_results)
-            exit(1)
     exit(0)
 
 
@@ -129,7 +92,7 @@ def get_identify(scan_cmd: list[str]) -> str | None:
 
 def maybe_setup_results_dir():
     """Create the results directory if it does not exist."""
-    results_dir = Path(".scanoss")
+    results_dir = Path(DEFAULT_RESULTS_DIR)
     results_dir.mkdir(exist_ok=True)
 
 
@@ -140,13 +103,59 @@ def maybe_remove_old_results():
         results_file.unlink(missing_ok=True)
 
 
-def print_stderr(message: str) -> None:
-    """Print a message to stderr.
+def log_and_exit(message: str, exit_code: int) -> None:
+    """Log a message and exit with the given code.
 
     Args:
-        message (str): message to print to stderr
+        message (str): message to log
+        exit_code (int): exit code
     """
-    print(message, file=sys.stderr)
+    if exit_code == 0:
+        logging.info(message)
+    else:
+        logging.error(message)
+    exit(exit_code)
+
+
+def run_scan(scan_cmd: list[str]) -> None:
+    """Run the SCANOSS scan command.
+
+    Args:
+        scan_cmd (list[str]): SCANOSS scan command
+    """
+    try:
+        subprocess.run(scan_cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        log_and_exit(f"Error: SCANOSS scan failed: {e}", 1)
+
+
+def present_results() -> None:
+    """Present the SCANOSS scan results."""
+    try:
+        cmd_result = subprocess.run(
+            [
+                "scanoss-py",
+                "results",
+                DEFAULT_RESULTS_PATH,
+                "--has-pending",
+                "--format",
+                "json",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        scan_results = cmd_result.stdout
+        logging.info(scan_results)
+    except subprocess.CalledProcessError as e:
+        # If there are pending results, exit code is 1
+        if e.returncode == 1:
+            log_and_exit(
+                "SCANOSS detected potential Open Source software. Please review the following:\n"
+                "Run 'scanoss-lui' in the terminal to view the results in more detail.",
+                1,
+            )
 
 
 def get_staged_files() -> list[str]:
@@ -164,15 +173,12 @@ def get_staged_files() -> list[str]:
         )
 
         staged_files = result.stdout.strip().split("\n")
-
-        staged_files = [f for f in staged_files if f]
-
-        return staged_files
+        return [f for f in staged_files if f]
     except subprocess.CalledProcessError as e:
-        print_stderr(f"Error: Git command failed: {e}")
+        logging.error(f"Error: Git command failed: {e}")
         return []
     except Exception as e:
-        print_stderr(f"Error: {e}")
+        logging.error(f"Error: {e}")
         return []
 
 
