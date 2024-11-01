@@ -5,13 +5,10 @@ from pathlib import Path
 DEFAULT_RESULTS_PATH = ".scanoss/results.json"
 
 
-def get_identify(scan_cmd: list[str], settings_file: str, sbom_file: str) -> str | None:
-    """Get the identify file path for Scanning.
+def set_bom_settings(scan_cmd: list[str], settings_file: str, sbom_file: str) -> None:
+    """Set the BOM settings file for the scan command if it exists."""
 
-    Returns:
-        str | None: file path to the identify file
-    """
-    identify: str | None = None
+    identify = None
 
     settings_file_path = Path(settings_file).resolve()
     legacy_sbom_file_path = Path(sbom_file).resolve()
@@ -23,8 +20,6 @@ def get_identify(scan_cmd: list[str], settings_file: str, sbom_file: str) -> str
     elif legacy_sbom_file_path.is_file():
         identify = str(legacy_sbom_file_path)
         scan_cmd.extend(["--identify", identify, "-F", "512"])
-
-    return identify
 
 
 def maybe_setup_results_dir(results_dir: str):
@@ -71,8 +66,8 @@ def get_staged_files() -> list[str]:
         staged_files = result.stdout.strip().split("\n")
         return [f for f in staged_files if f]
     except subprocess.CalledProcessError as e:
-        logging.error(f"Error: Git command failed: {e}")
+        logging.error(f"Git command failed: {e}")
         return []
     except Exception as e:
-        logging.error(f"Error: {e}")
+        logging.error(f"{e}")
         return []

@@ -21,18 +21,21 @@
 #   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #   THE SOFTWARE.
 ###
+
+
 import json
 import logging
 import subprocess
 
 from rich.console import Console
-from rich.json import JSON
-from utils import (
-    get_identify,
+from rich.table import Table
+
+from .utils import (
     get_staged_files,
     log_and_exit,
     maybe_remove_old_results,
     maybe_setup_results_dir,
+    set_bom_settings,
 )
 
 DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"
@@ -57,14 +60,7 @@ def main():
         DEFAULT_RESULTS_PATH,
     ]
 
-    identify = get_identify(
-        scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE
-    )
-    if identify is None:
-        log_and_exit(
-            f"No SCANOSS settings file or sbom file found, please make sure you have either a {DEFAULT_SCANOSS_SETTINGS_FILE} or {DEFAULT_SBOM_FILE} file in the root of your project.",
-            1,
-        )
+    set_bom_settings(scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE)
 
     maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
     maybe_remove_old_results(DEFAULT_RESULTS_PATH)
@@ -91,7 +87,7 @@ def run_scan(scan_cmd: list[str]) -> None:
     try:
         subprocess.run(scan_cmd, check=True)
     except subprocess.CalledProcessError as e:
-        log_and_exit(f"Error: SCANOSS scan failed: {e}", 1)
+        log_and_exit(f"SCANOSS scan failed: {e}", 1)
 
 
 def present_results() -> None:
@@ -115,17 +111,47 @@ def present_results() -> None:
         # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.
         if cmd_result.returncode == 1:
             scan_results_json = json.loads(scan_results)
-            console.print(
-                f"SCANOSS detected {scan_results_json.get("total")} files containing potential Open Source Software:",
-                style="bold red",
-            )
-            console.print(JSON(scan_results_json))
-            log_and_exit(
-                "Run 'scanoss-lui' in the terminal to view the results in more detail.",
-                1,
-            )
+            present_results_table(scan_results_json)
+            exit(1)
     except Exception as e:
-        log_and_exit(f"Error: SCANOSS results command failed: {e}", 1)
+        log_and_exit(f"SCANOSS results command failed: {e}", 1)
+
+
+def present_results_table(results: dict) -> None:
+    """Present the files pending identification in a table.
+
+    Args:
+        results (dict): files pending identification
+    """
+    table = Table(
+        show_header=True,
+        header_style="bold magenta",
+        show_lines=True,
+    )
+
+    table.add_column("File")
+    table.add_column("Status")
+    table.add_column("Match Type")
+    table.add_column("Matched")
+    table.add_column("Purl")
+    table.add_column("License")
+
+    for file in results.get("results"):
+        table.add_row(
+            file.get("file"),
+            file.get("status"),
+            file.get("match_type"),
+            file.get("matched"),
+            file.get("purl"),
+            file.get("license"),
+        )
+    console.print(
+        f"[bold red]SCANOSS detected [cyan]{results.get("total")}[/cyan] files containing potential Open Source Software:[/bold red]"
+    )
+    console.print(table)
+    console.print(
+        "Run [green]'scanoss-lui'[/green] in the terminal to view the results in more detail."
+    )
 
 
 if __name__ == "__main__":
