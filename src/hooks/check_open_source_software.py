@@ -146,7 +146,7 @@ def present_results_table(results: dict) -> None:
             file.get("license"),
         )
     console.print(
-        f"[bold red]SCANOSS detected [cyan]{results.get("total")}[/cyan] files containing potential Open Source Software:[/bold red]"
+        f"[bold red]SCANOSS detected [cyan]{results.get('total')}[/cyan] files containing potential Open Source Software:[/bold red]"
     )
     console.print(table)
     console.print(
