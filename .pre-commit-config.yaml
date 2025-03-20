@@ -1,8 +1,16 @@
 repos:
   - repo: local
     hooks:
-      - id: check-open-source-software
-        name: check-open-source-software
-        entry: python ./src/hooks/check_open_source_software.py
+      - id: scanoss-check-undeclared-code
+        name: SCANOSS Check Undeclared
+        entry: scanoss-check-undeclared-code
         language: python
+        pass_filenames: false
         verbose: true
+  - repo: local
+    hooks:
+      - id: test-python-version
+        name: Test Python Version
+        entry: which python
+        language: system
+        pass_filenames: false

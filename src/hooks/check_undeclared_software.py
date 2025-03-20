@@ -1,27 +1,26 @@
-###
-# SPDX-License-Identifier: MIT
-#
-#   Copyright (c) 2024, SCANOSS
-#
-#   Permission is hereby granted, free of charge, to any person obtaining a copy
-#   of this software and associated documentation files (the "Software"), to deal
-#   in the Software without restriction, including without limitation the rights
-#   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#   copies of the Software, and to permit persons to whom the Software is
-#   furnished to do so, subject to the following conditions:
-#
-#   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software.
-#
-#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#   THE SOFTWARE.
-###
+"""
+SPDX-License-Identifier: MIT
 
+  Copyright (c) 2024, SCANOSS
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+"""
 
 import json
 import logging
@@ -38,6 +37,7 @@ from .utils import (
     set_bom_settings,
 )
 
+# Default settings file and results location
 DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"
 DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
@@ -45,37 +45,9 @@ DEFAULT_RESULTS_FILENAME = "results.json"
 DEFAULT_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/{DEFAULT_RESULTS_FILENAME}"
 
 console = Console()
-
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-
-def main():
-    scanoss_scan_cmd = [
-        "scanoss-py",
-        "scan",
-        "--no-wfp-output",
-        "--output",
-        DEFAULT_RESULTS_PATH,
-    ]
-
-    set_bom_settings(scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE)
-
-    maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
-    maybe_remove_old_results(DEFAULT_RESULTS_PATH)
-
-    staged_files = get_staged_files()
-    if not staged_files:
-        log_and_exit("No files to scan. Skipping SCANOSS.", 0)
-
-    scanoss_scan_cmd.extend(["--files", *staged_files])
-
-    run_scan(scanoss_scan_cmd)
-
-    present_results()
-
-    exit(0)
 
 
 def run_scan(scan_cmd: list[str]) -> None:
@@ -105,9 +77,7 @@ def present_results() -> None:
             capture_output=True,
             text=True,
         )
-
         scan_results = cmd_result.stdout
-
         # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.
         if cmd_result.returncode == 1:
             scan_results_json = json.loads(scan_results)
@@ -128,7 +98,6 @@ def present_results_table(results: dict) -> None:
         header_style="bold magenta",
         show_lines=True,
     )
-
     table.add_column("File")
     table.add_column("Status")
     table.add_column("Match Type")
@@ -145,6 +114,7 @@ def present_results_table(results: dict) -> None:
             file.get("purl"),
             file.get("license"),
         )
+    # End for loop
     console.print(
         f"[bold red]SCANOSS detected [cyan]{results.get('total')}[/cyan] files containing potential Open Source Software:[/bold red]"
     )
@@ -152,6 +122,38 @@ def present_results_table(results: dict) -> None:
     console.print(
         "Run [green]'scanoss-cc'[/green] in the terminal to view the results in more detail."
     )
+
+
+def main():
+    """Run the check undeclared OSS file/snippet hook
+
+    Returns: 0 on success 1 otherwise
+    """
+
+    print("Entering main...")
+    # Standard scanoss-py starting scan commands
+    scanoss_scan_cmd = [
+        "scanoss-py",
+        "scan",
+        "--no-wfp-output",
+        "--output",
+        DEFAULT_RESULTS_PATH,
+    ]
+    # Determine which settings file to use (new or legacy)
+    set_bom_settings(scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE)
+
+    maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
+    maybe_remove_old_results(DEFAULT_RESULTS_PATH)
+    # Get the list of pending files to be scanned
+    staged_files = get_staged_files()
+    print(f'Staged files: {staged_files}')
+    if not staged_files:
+        log_and_exit("No files to scan. Skipping SCANOSS.", 0)  # Nothing to do
+
+    scanoss_scan_cmd.extend(["--files", *staged_files])
+    run_scan(scanoss_scan_cmd)
+    present_results()
+    exit(0)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@
 - [Available Hooks](#available-hooks)
 - [Developing Locally](#developing-locally)
 - [Contributing](#contributing)
-- [License](#license)
+- [License](LICENSE)
 
 ## Installation
 
@@ -41,7 +41,6 @@ For more installation options, refer to the [pre-commit documentation](https://p
 ### Step 2: Configure Pre-commit Hooks
 
 1. In the root of your project where you want to use these hooks, create a `.pre-commit-config.yaml` file with the following content:
-
 
     ```yaml
     repos:
