@@ -26,12 +26,13 @@
 import json
 import logging
 import subprocess
+from typing import Sequence
+import argparse
 
 from rich.console import Console
 from rich.table import Table
 
 from .utils import (
-    get_staged_files,
     log_and_exit,
     maybe_remove_old_results,
     maybe_setup_results_dir,
@@ -51,7 +52,11 @@ logging.basicConfig(
 )
 
 
-def main():
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filenames', nargs='*', help='Filenames to check.')
+    args = parser.parse_args(argv)
+    
     scanoss_scan_cmd = [
         "scanoss-py",
         "scan",
@@ -65,11 +70,10 @@ def main():
     maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
     maybe_remove_old_results(DEFAULT_RESULTS_PATH)
 
-    staged_files = get_staged_files()
-    if not staged_files:
+    if not args.filenames:
         log_and_exit("No files to scan. Skipping SCANOSS.", 0)
 
-    scanoss_scan_cmd.extend(["--files", *staged_files])
+    scanoss_scan_cmd.extend(["--files", *args.filenames])
 
     run_scan(scanoss_scan_cmd)
 
@@ -105,7 +109,7 @@ def present_results() -> None:
             capture_output=True,
             text=True,
         )
-
+        
         scan_results = cmd_result.stdout
 
         # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.
@@ -150,7 +154,7 @@ def present_results_table(results: dict) -> None:
     )
     console.print(table)
     console.print(
-        "Run [green]'scanoss-lui'[/green] in the terminal to view the results in more detail."
+        "Run [green]'scanoss-cc'[/green] in the terminal to view the results in more detail."
     )
 
 

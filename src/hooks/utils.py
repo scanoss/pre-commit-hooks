@@ -47,27 +47,3 @@ def log_and_exit(message: str, exit_code: int) -> None:
     else:
         logging.error(message)
     exit(exit_code)
-
-
-def get_staged_files() -> list[str]:
-    """Get the list of staged files in the current git repository.
-
-    Returns:
-        list[str]: list of staged files or an empty list if no files are staged.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        staged_files = result.stdout.strip().split("\n")
-        return [f for f in staged_files if f]
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Git command failed: {e}")
-        return []
-    except Exception as e:
-        logging.error(f"{e}")
-        return []
