@@ -150,7 +150,7 @@ def main():
     if not staged_files:
         log_and_exit("No files to scan. Skipping SCANOSS.", 0)  # Nothing to do
 
-    scanoss_scan_cmd.extend(["--files", *staged_files])
+    scanoss_scan_cmd.extend(["--files", *staged_files])  # TODO add support for supplying a file-list file
     run_scan(scanoss_scan_cmd)
     present_results()
     exit(0)

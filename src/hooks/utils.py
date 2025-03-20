@@ -27,6 +27,7 @@ import subprocess
 from pathlib import Path
 
 
+# TODO remove?
 def set_bom_settings(scan_cmd: list[str], settings_file: str, sbom_file: str) -> None:
     """Set the BOM settings file for the scan command if it exists.
 
