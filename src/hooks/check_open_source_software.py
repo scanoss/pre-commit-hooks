@@ -150,7 +150,7 @@ def present_results_table(results: dict) -> None:
     )
     console.print(table)
     console.print(
-        "Run [green]'scanoss-lui'[/green] in the terminal to view the results in more detail."
+        "Run [green]'scanoss-cc'[/green] in the terminal to view the results in more detail."
     )
 
 
