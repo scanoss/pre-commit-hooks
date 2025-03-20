@@ -23,11 +23,13 @@
 ###
 
 
+import argparse
 import json
 import logging
+import os
 import subprocess
-from typing import Sequence
-import argparse
+from pathlib import Path
+from typing import Any, Dict, Sequence
 
 from rich.console import Console
 from rich.table import Table
@@ -44,6 +46,7 @@ DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
 DEFAULT_RESULTS_FILENAME = "results.json"
 DEFAULT_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/{DEFAULT_RESULTS_FILENAME}"
+DEFAULT_TEMP_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/temp_results.json"
 
 console = Console()
 
@@ -54,15 +57,15 @@ logging.basicConfig(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument('filenames', nargs='*', help='Filenames to check.')
+    parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     args = parser.parse_args(argv)
-    
+
     scanoss_scan_cmd = [
         "scanoss-py",
         "scan",
         "--no-wfp-output",
         "--output",
-        DEFAULT_RESULTS_PATH,
+        DEFAULT_TEMP_RESULTS_PATH,
     ]
 
     set_bom_settings(scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE)
@@ -76,6 +79,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     scanoss_scan_cmd.extend(["--files", *args.filenames])
 
     run_scan(scanoss_scan_cmd)
+
+    # We need to merge the results since the files from pre-commit may come in different batches
+    merge_results()
 
     present_results()
 
@@ -94,6 +100,34 @@ def run_scan(scan_cmd: list[str]) -> None:
         log_and_exit(f"SCANOSS scan failed: {e}", 1)
 
 
+def merge_results() -> None:
+    """Merge the temporary results with the main results file."""
+    combined_results: Dict[str, Any] = {}
+
+    if os.path.exists(DEFAULT_RESULTS_PATH):
+        try:
+            with open(DEFAULT_RESULTS_PATH, "r") as f:
+                combined_results = json.load(f)
+        except json.JSONDecodeError:
+            combined_results = {}
+
+    if os.path.exists(DEFAULT_TEMP_RESULTS_PATH):
+        try:
+            with open(DEFAULT_TEMP_RESULTS_PATH, "r") as f:
+                new_results = json.load(f)
+
+                for file_path, file_results in new_results.items():
+                    combined_results[file_path] = file_results
+
+            with open(DEFAULT_RESULTS_PATH, "w") as f:
+                json.dump(combined_results, f, indent=2)
+
+            # Remove the temporary results file
+            Path(DEFAULT_TEMP_RESULTS_PATH).unlink(missing_ok=True)
+        except json.JSONDecodeError as e:
+            logging.error(f"Error parsing temporary results: {e}")
+
+
 def present_results() -> None:
     """Present the SCANOSS scan results."""
     try:
@@ -109,7 +143,7 @@ def present_results() -> None:
             capture_output=True,
             text=True,
         )
-        
+
         scan_results = cmd_result.stdout
 
         # If the return code is 1, SCANOSS detected pending potential Open Source software that needs to be reviewed.

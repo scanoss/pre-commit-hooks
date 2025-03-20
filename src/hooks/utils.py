@@ -1,5 +1,4 @@
 import logging
-import subprocess
 from pathlib import Path
 
 DEFAULT_RESULTS_PATH = ".scanoss/results.json"
