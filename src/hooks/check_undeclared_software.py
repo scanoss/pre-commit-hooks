@@ -33,12 +33,11 @@ from .utils import (
     get_staged_files,
     log_and_exit,
     maybe_remove_old_results,
-    maybe_setup_results_dir,
-    set_bom_settings,
+    maybe_setup_results_dir
 )
 
 # Default settings file and results location
-DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"
+DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"  # TODO remove
 DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
 DEFAULT_RESULTS_FILENAME = "results.json"
@@ -129,28 +128,24 @@ def main():
 
     Returns: 0 on success 1 otherwise
     """
-
-    print("Entering main...")
     # Standard scanoss-py starting scan commands
+    maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
+    maybe_remove_old_results(DEFAULT_RESULTS_PATH)
+    # Get the list of pending files to be scanned
+    staged_files = get_staged_files()
+    if not staged_files:
+        log_and_exit("No files to scan. Skipping SCANOSS.", 0)  # Nothing to do
+
     scanoss_scan_cmd = [
         "scanoss-py",
         "scan",
         "--no-wfp-output",
         "--output",
         DEFAULT_RESULTS_PATH,
+        "--files",
+        *staged_files
     ]
-    # Determine which settings file to use (new or legacy)
-    set_bom_settings(scanoss_scan_cmd, DEFAULT_SCANOSS_SETTINGS_FILE, DEFAULT_SBOM_FILE)
-
-    maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
-    maybe_remove_old_results(DEFAULT_RESULTS_PATH)
-    # Get the list of pending files to be scanned
-    staged_files = get_staged_files()
-    print(f'Staged files: {staged_files}')
-    if not staged_files:
-        log_and_exit("No files to scan. Skipping SCANOSS.", 0)  # Nothing to do
-
-    scanoss_scan_cmd.extend(["--files", *staged_files])  # TODO add support for supplying a file-list file
+    # TODO add support for supplying a file-list file
     run_scan(scanoss_scan_cmd)
     present_results()
     exit(0)

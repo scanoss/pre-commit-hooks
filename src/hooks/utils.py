@@ -27,26 +27,6 @@ import subprocess
 from pathlib import Path
 
 
-# TODO remove?
-def set_bom_settings(scan_cmd: list[str], settings_file: str, sbom_file: str) -> None:
-    """Set the BOM settings file for the scan command if it exists.
-
-    Args:
-        scan_cmd: scanoss-py scan command arguments list
-        settings_file: settings file path
-        sbom_file: SBOM file path (legacy)
-    """
-
-    settings_file_path = Path(settings_file).resolve() if settings_file is not None else None
-    legacy_sbom_file_path = Path(sbom_file).resolve() if sbom_file is not None else None
-
-    # Prefer settings file over legacy sbom file
-    if settings_file_path and settings_file_path.is_file():
-        scan_cmd.extend(["--settings", str(settings_file_path)])
-    elif legacy_sbom_file_path and legacy_sbom_file_path.is_file():
-        scan_cmd.extend(["--identify", str(legacy_sbom_file_path), "-F", "512"])  # TODO why do we need the -F 512 here?
-
-
 def maybe_setup_results_dir(results_dir: str):
     """Create the results directory if it does not exist.
 
@@ -92,7 +72,7 @@ def get_staged_files() -> list[str]:
     # TODO might be possible to use pre-commit git library for running git commands?
     try:
         result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMRTUXB"],
+            ["git", "diff", "--staged", "--name-only", "--diff-filter=ACMR"],
             capture_output=True,
             text=True,
             check=True,
