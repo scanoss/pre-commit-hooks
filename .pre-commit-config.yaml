@@ -7,10 +7,3 @@ repos:
         language: python
         pass_filenames: false
         verbose: true
-  - repo: local
-    hooks:
-      - id: test-python-version
-        name: Test Python Version
-        entry: which python
-        language: system
-        pass_filenames: false

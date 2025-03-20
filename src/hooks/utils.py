@@ -91,7 +91,7 @@ def get_staged_files() -> list[str]:
     # TODO might be possible to use pre-commit git library for running git commands?
     try:
         result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMRTUXB"],
             capture_output=True,
             text=True,
             check=True,

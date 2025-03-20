@@ -1,3 +1,4 @@
+.DS_Store
 *.wfp
 *-result.json
 *-res.json
@@ -27,5 +28,4 @@ docs/build
 .devcontainer/devcontainer.json
 !.devcontainer/*.example.json
 
-.DS_Store
-scanoss.json
+.scanoss
