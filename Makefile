@@ -1,12 +1,5 @@
 
 #vars
-IMAGE_BASE=scanoss-py-base
-IMAGE_NAME=scanoss-py
-REPO=scanoss
-DOCKER_FULLNAME_BASE=${REPO}/${IMAGE_BASE}
-DOCKER_FULLNAME=${REPO}/${IMAGE_NAME}
-GHCR_FULLNAME_BASE=ghcr.io/${REPO}/${IMAGE_BASE}
-GHCR_FULLNAME=ghcr.io/${REPO}/${IMAGE_NAME}
 VERSION=$(shell ./version.py)
 
 # HELP
@@ -29,6 +22,5 @@ dev_setup:  ## Setup Python dev env for the current user
 
 dev_uninstall:  ## Uninstall Python dev setup for the current user
 	@echo "Uninstalling dev env..."
-	pip3 uninstall -y scanoss
-	@rm -f venv/bin/scanoss-check-undeclared-code
-	@rm -rf src/scanoss_pre_commit_hooks.egg-info
+	pip3 uninstall -y scanoss_pre_commit_hooks
+	@rm -rf dist/* build/* venv/bin/scanoss-check-undeclared-code src/scanoss_pre_commit_hooks.egg-info
