@@ -1,7 +1,7 @@
-- id: check-open-source-software
-  name: check open source software
-  description: checks for potential open source software in the files being commited
-  entry: check_open_source_software
+- id: scanoss-check-undeclared-code
+  name: SCANOSS Undeclared Check
+  description: Check for potential undeclared open source software in the files being commited
+  entry: scanoss-check-undeclared-code
   language: python
   stages: [pre-commit, pre-push, manual]
   pass_filenames: false

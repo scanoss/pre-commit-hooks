@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "skip": {
+      "patterns": {},
+      "sizes": {}
+    }
+  },
+  "bom": {
+    "include": [
+      {
+        "purl": "pkg:github/scanoss/pre-commit-hooks"
+      }
+    ]
+  }
+}

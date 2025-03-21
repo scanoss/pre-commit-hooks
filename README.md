@@ -7,7 +7,7 @@
 - [Available Hooks](#available-hooks)
 - [Developing Locally](#developing-locally)
 - [Contributing](#contributing)
-- [License](#license)
+- [License](LICENSE)
 
 ## Installation
 
@@ -42,13 +42,12 @@ For more installation options, refer to the [pre-commit documentation](https://p
 
 1. In the root of your project where you want to use these hooks, create a `.pre-commit-config.yaml` file with the following content:
 
-
     ```yaml
     repos:
     -   repo: https://github.com/scanoss/pre-commit-hooks
         rev: v0.0.1
         hooks:
-        -   id: check-open-source-software
+        -   id: scanoss-check-undeclared-code
     ```
 
     Check the latest release [here](https://github.com/scanoss/pre-commit-hooks/releases)
@@ -69,7 +68,7 @@ For more installation options, refer to the [pre-commit documentation](https://p
 
 This repository currently includes the following pre-commit hook:
 
-- **check-open-source-software**: This hook checks for potential open source software in the files being committed. It is designed to run at the `pre-commit`, `pre-push`, and `manual` stages.
+- **scanoss-check-undeclared-code**: This hook checks for potential undeclared open source software in the files being committed. It is designed to run at the `pre-commit`, `pre-push`, and `manual` stages.
 
 ## Developing Locally
 
@@ -82,16 +81,30 @@ To develop this project locally, follow these steps:
     cd pre-commit-hooks
     ```
 
-2. Install the necessary dependencies:
+2. Set up the development environment using the Makefile:
 
     ```bash
-    pip install -r requirements.txt
+    make dev_setup
     ```
 
-3. Set up pre-commit hooks:
+   This will install the package in development mode with all necessary dependencies.
+
+3. (Optional) To see all available make commands:
+
+    ```bash
+    make help
+    ```
+
+4. Set up pre-commit hooks:
 
     ```bash
     pre-commit install
+    ```
+
+5. When you're done with development, you can uninstall using:
+
+    ```bash
+    make dev_uninstall
     ```
 
 ## Contributing
