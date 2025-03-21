@@ -21,14 +21,18 @@ SPDX-License-Identifier: MIT
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 """
+from __future__ import annotations
 
+import argparse
 import json
 import logging
 import subprocess
+from collections.abc import Sequence
 
 from rich.console import Console
 from rich.table import Table
 
+from . import __version__
 from .utils import (
     get_staged_files,
     log_and_exit,
@@ -37,8 +41,6 @@ from .utils import (
 )
 
 # Default settings file and results location
-DEFAULT_SCANOSS_SETTINGS_FILE = "scanoss.json"  # TODO remove
-DEFAULT_SBOM_FILE = "SBOM.json"
 DEFAULT_RESULTS_DIR = ".scanoss"
 DEFAULT_RESULTS_FILENAME = "results.json"
 DEFAULT_RESULTS_PATH = f"{DEFAULT_RESULTS_DIR}/{DEFAULT_RESULTS_FILENAME}"
@@ -123,11 +125,26 @@ def present_results_table(results: dict) -> None:
     )
 
 
-def main():
+def ver(*_):
+    """Display version details
+    Args:
+        *_: ignore/unused
+    """
+    print(f'Version: {__version__}')
+
+
+def main(argv: Sequence[str] | None = None) -> int:
     """Run the check undeclared OSS file/snippet hook
 
     Returns: 0 on success 1 otherwise
     """
+    # Setup args parser and display version details
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', '-v', action='store_true', help='Display version details')
+    args = parser.parse_args(argv)
+    if args.version:
+        ver(parser, args)
+        return 0
     # Standard scanoss-py starting scan commands
     maybe_setup_results_dir(DEFAULT_RESULTS_DIR)
     maybe_remove_old_results(DEFAULT_RESULTS_PATH)
@@ -148,7 +165,7 @@ def main():
     # TODO add support for supplying a file-list file
     run_scan(scanoss_scan_cmd)
     present_results()
-    exit(0)
+    return 0
 
 
 if __name__ == "__main__":

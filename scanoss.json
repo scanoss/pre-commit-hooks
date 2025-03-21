@@ -1,7 +1,11 @@
 {
   "settings": {
     "skip": {
-      "patterns": {},
+      "patterns": {
+        "scanning": [
+          "src/hooks/__init__.py"
+        ]
+      },
       "sizes": {}
     }
   },
@@ -9,6 +13,14 @@
     "include": [
       {
         "purl": "pkg:github/scanoss/pre-commit-hooks"
+      },
+      {
+        "path": "tools/get_next_version.sh",
+        "purl": "pkg:github/scanoss/scanoss.py"
+      },
+      {
+        "path": "version.py",
+        "purl": "pkg:github/scanoss/scanoss.py"
       }
     ]
   }
