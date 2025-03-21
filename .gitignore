@@ -15,6 +15,7 @@ tmp/
 __pycache__
 venv/
 .venv
+.idea/
 
 bad*.txt
 *.csv
