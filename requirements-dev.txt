@@ -1,6 +1,0 @@
-pre-commit
-pytest
-setuptools
-wheel
-twine
-build
