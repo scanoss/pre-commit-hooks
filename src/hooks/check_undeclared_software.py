@@ -91,7 +91,7 @@ def run_subcommand(
 
 def sanitize_scan_command(command: List[str]) -> List[str]:
     """
-    Sanitize the command arguments for the scanoss-py command in order to avoid showing sensitive information.
+    Return a copy with sensitive flag values redacted.
 
     Args:
         command (List[str]): The command arguments to sanitize.
@@ -99,20 +99,18 @@ def sanitize_scan_command(command: List[str]) -> List[str]:
     Returns:
         List[str]: The sanitized command arguments.
     """
-    to_sanitize_args = ["--api-key"]
+    SENSITIVE_FLAGS = {"--key", "--proxy"}  # proxy may embed creds
 
-    # First check if any of the sanitizable arguments are present in the command
-    if not any(arg in command for arg in to_sanitize_args):
-        return command
+    sanitized = command.copy()
 
-    to_sanitize_indexes = [command.index(arg) + 1 for arg in to_sanitize_args]
-    sanitized_command = []
-    for arg in command:
-        if command.index(arg) not in to_sanitize_indexes:
-            sanitized_command.append(arg)
-        else:
-            sanitized_command.append("*****")
-    return sanitized_command
+    for i, arg in enumerate(command):
+        for flag in SENSITIVE_FLAGS:
+            if arg == flag:
+                if i + 1 < len(sanitized):
+                    sanitized[i + 1] = "*****"
+            elif arg.startswith(f"{flag}="):
+                sanitized[i] = f"{flag}=*****"
+    return sanitized
 
 
 def present_results_table(results: dict, output_path: Path) -> None:
