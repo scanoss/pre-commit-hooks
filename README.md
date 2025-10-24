@@ -8,6 +8,7 @@
 - [License](#license)
 - [Bugs/Features](#bugsfeatures)
 - [Contributing](#contributing)
+- [Release and Deployment](#release-and-deployment)
 - [Changelog](#changelog)
 
 ## Available Hooks
@@ -127,6 +128,54 @@ To request features or alert about bugs, please do so [here](https://github.com/
 
 ## Contributing
 We welcome contributions to this project! Please clone the repository and submit a pull request with your changes. Ensure that your code passes all pre-commit checks before submitting.
+
+## Release and Deployment
+
+This project uses automated GitHub Actions workflows to manage releases. The package is distributed through GitHub Releases and the pre-commit framework (not PyPI).
+
+### Release Process
+
+1. **Update Version**: Modify `__version__` in `src/hooks/__init__.py` following semantic versioning (MAJOR.MINOR.PATCH)
+
+2. **Create Tag**: Run the `tag-version.yml` workflow manually:
+   - Go to Actions → "Tag Version" → "Run workflow"
+   - The workflow compares the Python package version with the latest Git tag
+   - If versions differ, it creates and pushes a new tag (e.g., `v0.3.0`)
+
+3. **Automated Release**: The `release.yml` workflow triggers automatically when a tag is pushed:
+   - Builds the package in a clean environment
+   - Runs verification tests (binary check, `--help`, basic execution)
+   - Creates a draft GitHub Release
+
+4. **Publish Release**: A maintainer reviews and publishes the draft release manually
+
+### Version Management
+
+- **Current Version Source**: `src/hooks/__init__.py`
+- **Versioning Strategy**: Semantic Versioning (SemVer)
+- **Tag Format**: `v0.3.0` (with 'v' prefix)
+- **Major Version Tags**: The repository maintains `v0` and `v1` tags that point to the latest patch release, allowing users to pin to a major version and automatically receive updates
+
+### Distribution
+
+Users reference this package in their `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+-   repo: https://github.com/scanoss/pre-commit-hooks
+    rev: v0  # Pin to major version, or use v0.3.0 for specific version
+    hooks:
+    -   id: scanoss-check-undeclared-code
+```
+
+The pre-commit framework installs directly from the Git repository—no PyPI publishing required.
+
+### Key Workflows
+
+- `.github/workflows/tag-version.yml` - Manual workflow for version tagging
+- `.github/workflows/release.yml` - Automated draft release creation
+- `.github/workflows/test.yml` - Continuous testing on main branch and PRs
+- `.github/workflows/update-main-version.yml` - Major version tag maintenance
 
 ## Changelog
 Details of major changes to the library can be found in [CHANGELOG.md](CHANGELOG.md).

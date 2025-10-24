@@ -35,5 +35,5 @@ jobs:
       - name: Run Local Tests
         run: |
           which scanoss-check-undeclared-code
-          scanoss-check-undeclared-code --version
+          scanoss-check-undeclared-code --help
           scanoss-check-undeclared-code
