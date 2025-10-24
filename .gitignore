@@ -30,3 +30,4 @@ docs/build
 !.devcontainer/*.example.json
 
 .scanoss
+.env

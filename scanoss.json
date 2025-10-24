@@ -2,9 +2,7 @@
   "settings": {
     "skip": {
       "patterns": {
-        "scanning": [
-          "src/hooks/__init__.py"
-        ]
+        "scanning": ["src/hooks/__init__.py"]
       },
       "sizes": {}
     }

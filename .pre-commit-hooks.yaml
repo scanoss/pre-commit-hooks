@@ -5,4 +5,5 @@
   language: python
   stages: [pre-commit, pre-push, manual]
   pass_filenames: false
-
+  require_serial: true
+  verbose: true
