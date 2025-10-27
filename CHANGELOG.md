@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming changes...
 
+## [0.3.1] - 2025-10-27
+### Fixed
+- Capture stderr output from subprocesses
+- Handle empty output gracefully
+
 ## [0.3.0] - 2025-10-24
 ### Added
 - CLI arguments support: `--api-url`, `--api-key`, `--proxy`, `--pac`, `--ca-cert`, `--output`, `--debug`, `--ignore-cert-errors`, `--rest`
@@ -42,3 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.0.1...v0.1.0
 [0.2.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.1.0...v0.2.0
 [0.3.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.2.0...v0.3.0
+[0.3.1]: https://github.com/scanoss/pre-commit-hooks/compare/v0.3.0...v0.3.1
