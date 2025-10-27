@@ -289,34 +289,34 @@ def main(
     raw_results = scan_result.stdout.strip()
     try:
         results = json.loads(raw_results) if raw_results else {}
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         process_status.stop()
-        logging.error("SCANOSS scan output is not valid JSON %s", e)
+        logging.exception("SCANOSS scan output is not valid JSON")
         ctx.exit(EXIT_FAILURE)
 
     if not results:
         process_status.stop()
-        logging.info(
-            "SCANOSS scan completed with no results %s",
-            "add --debug to see more details" if not debug else "",
-        )
+        msg = "SCANOSS scan completed with no results"
+        if not debug:
+            msg += ". add --debug to see more details"
+        logging.info(msg)
         ctx.exit(EXIT_SUCCESS)
 
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         logging.debug(f"Ensuring output directory exists: {output.parent}")
-    except OSError as e:
+    except OSError:
         process_status.stop()
-        logging.error(f"Failed to create output directory {output.parent}: {e}")
+        logging.exception(f"Failed to create output directory {output.parent}")
         ctx.exit(EXIT_FAILURE)
 
     try:
         with open(output, "w") as output_file:
             output_file.write(scan_result.stdout)
         logging.debug(f"Scan results saved to {output}")
-    except OSError as e:
+    except OSError:
         process_status.stop()
-        logging.error(f"Failed to write scan results to {output}: {e}")
+        logging.exception(f"Failed to write scan results to {output}")
         ctx.exit(EXIT_FAILURE)
 
     scanoss_has_pending_command = [
