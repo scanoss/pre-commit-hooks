@@ -78,15 +78,19 @@ def get_staged_files() -> list[str]:
 
 
 def run_subcommand(
-    command: list[str], check: bool = True
+    command: list[str], check: bool = True, debug: bool = False
 ) -> subprocess.CompletedProcess[str]:
     """Run a command safely and return the completed process.
 
     Args:
         command (list[str]): Command to run
         check (bool): Whether to check the return code of the command
+        debug (bool): Whether to log the command output
     """
-    return subprocess.run(command, check=check, capture_output=True, text=True)
+    result = subprocess.run(command, check=check, capture_output=True, text=True)
+    if debug:
+        logging.debug(result.stderr)
+    return result
 
 
 def sanitize_scan_command(command: List[str]) -> List[str]:
@@ -268,34 +272,51 @@ def main(
     if rest:
         scanoss_scan_cmd.append("--rest")
 
-    process_status = console.status("[bold green] Running SCANOSS scan...")
-    logging.debug(f"Executing command: {sanitize_scan_command(scanoss_scan_cmd)}")
-
+    process_status = console.status("[bold yellow] Running SCANOSS scan...\n")
     process_status.start()
 
+    logging.debug(f"Executing command: {sanitize_scan_command(scanoss_scan_cmd)}")
+
     try:
-        scan_result = run_subcommand(scanoss_scan_cmd)
+        scan_result = run_subcommand(scanoss_scan_cmd, debug=debug)
     except subprocess.CalledProcessError as e:
         logging.error(
             f"Error running scanoss command with return code {e.returncode}: {e.stderr}"
         )
         ctx.exit(EXIT_FAILURE)
 
+    # We fail fast if there are no results or invalid JSON
+    raw_results = scan_result.stdout.strip()
+    try:
+        results = json.loads(raw_results) if raw_results else {}
+    except json.JSONDecodeError:
+        process_status.stop()
+        logging.exception("SCANOSS scan output is not valid JSON")
+        ctx.exit(EXIT_FAILURE)
+
+    if not results:
+        process_status.stop()
+        msg = "SCANOSS scan completed with no results"
+        if not debug:
+            msg += ". add --debug to see more details"
+        logging.info(msg)
+        ctx.exit(EXIT_SUCCESS)
+
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         logging.debug(f"Ensuring output directory exists: {output.parent}")
-    except OSError as e:
-        logging.error(f"Failed to create output directory {output.parent}: {e}")
+    except OSError:
         process_status.stop()
+        logging.exception(f"Failed to create output directory {output.parent}")
         ctx.exit(EXIT_FAILURE)
 
     try:
         with open(output, "w") as output_file:
             output_file.write(scan_result.stdout)
         logging.debug(f"Scan results saved to {output}")
-    except OSError as e:
-        logging.error(f"Failed to write scan results to {output}: {e}")
+    except OSError:
         process_status.stop()
+        logging.exception(f"Failed to write scan results to {output}")
         ctx.exit(EXIT_FAILURE)
 
     scanoss_has_pending_command = [
@@ -307,9 +328,14 @@ def main(
         "json",
     ]
 
-    process_status.update("[bold green] Checking for pending results...")
+    if debug:
+        scanoss_has_pending_command.append("--debug")
 
-    has_pending_results = run_subcommand(scanoss_has_pending_command, check=False)
+    process_status.update("[bold yellow] Checking for pending results...\n")
+
+    has_pending_results = run_subcommand(
+        scanoss_has_pending_command, check=False, debug=debug
+    )
     if has_pending_results.returncode == 1:
         try:
             payload = json.loads(has_pending_results.stdout)
@@ -326,7 +352,7 @@ def main(
         ctx.exit(has_pending_results.returncode)
 
     process_status.stop()
-    console.print("[bold green] ✅ No pending results found. It's safe to commit.")
+    console.print("[bold green]✅ No pending results found. It's safe to commit.")
     ctx.exit(EXIT_SUCCESS)
 
 
