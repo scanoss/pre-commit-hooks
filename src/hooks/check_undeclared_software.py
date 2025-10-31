@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import List
 
 import click
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -43,6 +44,9 @@ EXIT_FAILURE = 1
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 console = Console()
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 
 def configure_logging(debug: bool) -> None:
@@ -229,6 +233,7 @@ def main(
 
     This pre-commit hook scans staged files using SCANOSS to detect undeclared open source code.
     """
+
     # TODO: Warn users if .scanoss is not in .gitignore
     configure_logging(debug)
 

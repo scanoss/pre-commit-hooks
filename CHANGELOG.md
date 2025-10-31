@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming changes...
 
+## [0.4.0] - 2025-10-31
+### Added
+- Load environment variables from .env file if it exists
+
 ## [0.3.1] - 2025-10-27
 ### Fixed
 - Capture stderr output from subprocesses
@@ -48,3 +52,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.1.0...v0.2.0
 [0.3.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.2.0...v0.3.0
 [0.3.1]: https://github.com/scanoss/pre-commit-hooks/compare/v0.3.0...v0.3.1
+[0.4.0]: https://github.com/scanoss/pre-commit-hooks/compare/v0.3.1...v0.4.0

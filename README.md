@@ -17,6 +17,7 @@ This repository currently includes the following pre-commit hooks:
 - **scanoss-check-undeclared-code**
   - This hook checks for potential undeclared open source software in the files being committed.
   - It is designed to run at the `pre-commit`, `pre-push`, and `manual` stages.
+  - Configuration can be provided via command-line arguments, environment variables, or a `.env` file.
 
 
 ## Installation
@@ -65,7 +66,19 @@ For more installation options, refer to the [pre-commit documentation](https://p
     pre-commit install
     ```
 
-4. (Optional) Run the hooks against all files to ensure everything is in order:
+4. (Optional) Configure the hook using a `.env` file in your project root:
+
+    ```bash
+    # .env
+    SCANOSS_API_KEY=your_api_key_here
+    SCANOSS_SCAN_URL=https://api.scanoss.com/scan/direct
+    HTTPS_PROXY=http://proxy.example.com:8080
+    SCANOSS_DEBUG=true
+    ```
+
+    The hook automatically loads environment variables from the `.env` file if it exists. You can also set these variables directly in your environment or pass them as command-line arguments.
+
+5. (Optional) Run the hooks against all files to ensure everything is in order:
 
     ```bash
     pre-commit run --all-files
